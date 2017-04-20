@@ -1,0 +1,6 @@
+!.gitignore
+*
+!*/src/*
+!*/input/*
+!*/out/*
+!readme.md
