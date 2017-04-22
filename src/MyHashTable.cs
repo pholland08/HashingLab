@@ -16,7 +16,7 @@ namespace HashingLab.src
             get { return _CurrentCapacity; }
 
         }
-        
+
         // HashTable constructors
         private MyHashTable() { _CurrentCapacity = 0; }
         public MyHashTable(int Length) : this()
@@ -24,38 +24,33 @@ namespace HashingLab.src
             _HashTable = new MyHashNode[Length];
         }
 
-        // TODO Write method CalculateHash
-        private int _CalculateHash(string key)
-        {
-            int _address = -1;
-            // TODO Add hash algorithm
-            return _address;
-
-        }
-
         // Linear collision handling
-        private bool _HandleCollision(MyHashNode CollidedNode)
+        private bool _HandleCollision(ref MyHashNode CollidedNode)
         {
-            CollidedNode.ProbeCount++;
+            CollidedNode.ProbeCount += 1;
             int _CollisionAddress = CollidedNode.InitialAddress + CollidedNode.ProbeCount;
 
             // Wrap around to front of table if needed
             if (_CollisionAddress >= _HashTable.Length) { _CollisionAddress -= _HashTable.Length; }
 
-            // Check if arrived at original location
-            if (_CollisionAddress == CollidedNode.InitialAddress) { return false; }
+            // If wrapped around to original location
+            if (_CollisionAddress == CollidedNode.InitialAddress)
+            {
+
+                CollidedNode.CurrentLocation = -1;
+                return false;
+            }
 
             if (_HashTable[_CollisionAddress].HashKey == null)
             {
                 // Space is available
-                _HashTable[CollidedNode.InitialAddress] = CollidedNode;
-                _CurrentCapacity++;
+                CollidedNode.CurrentLocation = _CollisionAddress;
                 return true;
             }
             else
             {
                 // Another collision has occured
-                return _HandleCollision(CollidedNode);
+                return _HandleCollision(ref CollidedNode);
             }
         }
 
@@ -63,7 +58,6 @@ namespace HashingLab.src
         public bool Add(string key)
         {
             MyHashNode NewNode = new MyHashNode(key);
-            NewNode.InitialAddress = _CalculateHash(key);
             NewNode.ProbeCount++;
 
             if (_HashTable[NewNode.InitialAddress].HashKey == null)
@@ -75,11 +69,23 @@ namespace HashingLab.src
             else
             {
                 // Collision has occured
-                return _HandleCollision(NewNode);
+                bool Result = _HandleCollision(ref NewNode);
+                if (Result)
+                {
+                    // Empty space was found
+                    _HashTable[NewNode.InitialAddress] = NewNode;
+                    _CurrentCapacity++;
+                    return true;
+                }
+                else
+                {
+                    // Table was full
+                    return false;
+                }
             }
 
         }
-        
+
         // TODO Write method Delete
         public bool Delete(string key)
         {
@@ -88,6 +94,43 @@ namespace HashingLab.src
         }
 
         // TODO Write method Find
+        public int Find(string Key)
+        {
+            MyHashNode NewNode = new MyHashNode(Key);
+            NewNode.ProbeCount++;
+
+            if (_HashTable[NewNode.InitialAddress].HashKey == Key)
+            {
+                return NewNode.InitialAddress;
+            }
+            else
+            {
+                // Begin search
+                int _SearchAddress = NewNode.InitialAddress + NewNode.ProbeCount;
+                int _FoundAt = -1;
+
+                // While current comparison is initialized but isn't the InitialAddress
+                while (_HashTable[_SearchAddress] != null || _SearchAddress != NewNode.InitialAddress)
+                {
+                    if (_SearchAddress >= _HashTable.Length) { _SearchAddress -= _HashTable.Length; }
+
+                    if (_HashTable[_SearchAddress].HashKey == Key)
+                    {
+                        // Key found at different address
+                        _FoundAt = _SearchAddress;
+                        return _FoundAt;
+                    }
+                    else
+                    {
+                        // Compare next key
+                        NewNode.ProbeCount++;
+                    }
+                }
+                // Key not found in table
+                return _FoundAt;
+
+            }
+        }
 
     }
 
@@ -110,6 +153,14 @@ namespace HashingLab.src
             set { _InitialAddress = value; }
         }
 
+        // TODO Declare field: CurrentLocation
+        private int _CurrentLocation;
+        public int CurrentLocation
+        {
+            get { return _CurrentLocation; }
+            set { _CurrentLocation = value; }
+        }
+
         // TODO Declare field: ProbeCount
         private int _ProbeCount;
         public int ProbeCount
@@ -130,7 +181,20 @@ namespace HashingLab.src
         public MyHashNode(string key) : this()
         {
             this.HashKey = key;
+            this.InitialAddress = HashFunctions.CalculateHash(key);
         }
 
+    }
+
+    class HashFunctions
+    {
+        // TODO Write method CalculateHash
+        public static int CalculateHash(string key)
+        {
+            int _address = -1;
+            // TODO Add body of algorithm
+            return _address;
+
+        }
     }
 }
