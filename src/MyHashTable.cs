@@ -8,7 +8,7 @@ namespace HashingLab.src
 {
     class MyHashTable
     {
-        // TODO Create HashTable structure
+        #region Fields
         private MyHashNode[] _HashTable;
         private int _CurrentCapacity;
         public int CurrentCapacity
@@ -16,14 +16,24 @@ namespace HashingLab.src
             get { return _CurrentCapacity; }
 
         }
+        public int Length;
+        #endregion Fields
 
+        #region Constructors
         // HashTable constructors
         private MyHashTable() { _CurrentCapacity = 0; }
         public MyHashTable(int Length) : this()
         {
             _HashTable = new MyHashNode[Length];
+            this.Length = Length;
+            for (int node = 0; node < _HashTable.Length; node++)
+            {
+                _HashTable[node] = new MyHashNode();
+            }
         }
+        #endregion Constructors
 
+        #region Methods
         // Linear collision handling
         private bool _HandleCollision(ref MyHashNode CollidedNode)
         {
@@ -31,12 +41,11 @@ namespace HashingLab.src
             int _CollisionAddress = CollidedNode.InitialAddress + CollidedNode.ProbeCount;
 
             // Wrap around to front of table if needed
-            if (_CollisionAddress >= _HashTable.Length) { _CollisionAddress -= _HashTable.Length; }
+            if (!(_CollisionAddress < _HashTable.Length)) { _CollisionAddress -= _HashTable.Length; }
 
-            // If wrapped around to original location
+            // If wrapped around to original location, return false
             if (_CollisionAddress == CollidedNode.InitialAddress)
             {
-
                 CollidedNode.CurrentLocation = -1;
                 return false;
             }
@@ -49,6 +58,7 @@ namespace HashingLab.src
             }
             else
             {
+                // Recursion
                 // Another collision has occured
                 return _HandleCollision(ref CollidedNode);
             }
@@ -62,128 +72,93 @@ namespace HashingLab.src
 
             if (_HashTable[NewNode.InitialAddress].HashKey == null)
             {
-                _HashTable[NewNode.InitialAddress] = NewNode;
+                NewNode.CurrentLocation = NewNode.InitialAddress;
+                _HashTable[NewNode.CurrentLocation] = NewNode;
                 _CurrentCapacity++;
                 return true;
             }
             else
             {
                 // Collision has occured
-                bool Result = _HandleCollision(ref NewNode);
-                if (Result)
+                do
                 {
-                    // Empty space was found
-                    _HashTable[NewNode.InitialAddress] = NewNode;
-                    _CurrentCapacity++;
-                    return true;
-                }
-                else
-                {
-                    // Table was full
-                    return false;
-                }
+                    bool Result = _HandleCollision(ref NewNode);
+                    if (Result)
+                    {
+                        // Empty space was found
+                        _HashTable[NewNode.CurrentLocation] = NewNode;
+                        _CurrentCapacity++;
+                        return true;
+                    }
+                } while (NewNode.ProbeCount < _HashTable.Length);
+
+                // Table was full
+                return false;
+
             }
 
         }
 
         // TODO Write method Delete
-        public bool Delete(string key)
+        public bool Delete(string Key)
         {
             // TODO Write method body
+            int KeyAddress = Get(Key).InitialAddress;
+            if (KeyAddress > -1)
+            {
+                // Reset Address.HashKey, but keep keep other fields to indicate table location has already been used.
+                _HashTable[KeyAddress].HashKey = null;
+                return true;
+            }
             return false;
         }
 
-        // TODO Write method Find
-        public int Find(string Key)
+        // Search HashTable for location of key, returns -1 if not found.
+        public MyHashNode Get(string Key)
         {
             MyHashNode NewNode = new MyHashNode(Key);
             NewNode.ProbeCount++;
 
             if (_HashTable[NewNode.InitialAddress].HashKey == Key)
             {
-                return NewNode.InitialAddress;
+                NewNode.CurrentLocation = NewNode.InitialAddress;
+                return NewNode;
             }
             else
             {
                 // Begin search
-                int _SearchAddress = NewNode.InitialAddress + NewNode.ProbeCount;
-                int _FoundAt = -1;
-
+                int _SearchAddress;
                 // While current comparison is initialized but isn't the InitialAddress
-                while (_HashTable[_SearchAddress] != null || _SearchAddress != NewNode.InitialAddress)
+                do
                 {
+                    _SearchAddress = NewNode.InitialAddress + NewNode.ProbeCount;
                     if (_SearchAddress >= _HashTable.Length) { _SearchAddress -= _HashTable.Length; }
 
                     if (_HashTable[_SearchAddress].HashKey == Key)
                     {
                         // Key found at different address
-                        _FoundAt = _SearchAddress;
-                        return _FoundAt;
+                        return _HashTable[_SearchAddress];
                     }
                     else
                     {
                         // Compare next key
                         NewNode.ProbeCount++;
                     }
-                }
+                } while (_HashTable[_SearchAddress] != null || _SearchAddress != NewNode.InitialAddress);
                 // Key not found in table
-                return _FoundAt;
+                return new MyHashNode();
 
             }
         }
 
-    }
-
-    // TODO Create HashNode class
-    class MyHashNode
-    {
-        // TODO Declare field: HashKey
-        private string _HashKey;
-        public string HashKey
+        // TODO Write method ShowContents
+        // TODO Document method
+        public string DisplayContents(int first, int last)
         {
-            get { return _HashKey; }
-            set { _HashKey = value; }
+            // TODO Add method body
+            return "";
         }
-
-        // TODO Declare field: InitialAddress
-        private int _InitialAddress;
-        public int InitialAddress
-        {
-            get { return _InitialAddress; }
-            set { _InitialAddress = value; }
-        }
-
-        // TODO Declare field: CurrentLocation
-        private int _CurrentLocation;
-        public int CurrentLocation
-        {
-            get { return _CurrentLocation; }
-            set { _CurrentLocation = value; }
-        }
-
-        // TODO Declare field: ProbeCount
-        private int _ProbeCount;
-        public int ProbeCount
-        {
-            get { return _ProbeCount; }
-            set { _ProbeCount = value; }
-        }
-
-        // TODO Write HashNode constructor
-        // No argument constructor
-        private MyHashNode()
-        {
-            this.InitialAddress = -1;
-            this.ProbeCount = 0;
-            this.HashKey = null;
-        }
-        // Default constructor
-        public MyHashNode(string key) : this()
-        {
-            this.HashKey = key;
-            this.InitialAddress = HashFunctions.CalculateHash(key);
-        }
-
+        #endregion Methods
     }
 
     class HashFunctions
@@ -192,9 +167,18 @@ namespace HashingLab.src
         public static int CalculateHash(string key)
         {
             int _address = -1;
+            char[] _KeyChars = key.ToCharArray();
+            int first = Convert.ToInt32(string.Format("{0}{1}", (int)_KeyChars[0], (int)_KeyChars[1]));
+            int second = Convert.ToInt32(string.Format("{0}{1}", (int)_KeyChars[5], (int)_KeyChars[6]));
             // TODO Add body of algorithm
+            //_address = (((first + second) * 256) + (int)_KeyChars[12]) % 128;
+            _address = (((first + second) * 256) + (int)_KeyChars[12]) % 127;
+
             return _address;
 
         }
     }
 }
+
+
+// TODO Look into passing functions as parameter
