@@ -37,8 +37,8 @@ namespace HashingLab.src
         // Linear collision handling
         private bool _HandleCollision(ref MyHashNode CollidedNode)
         {
-            CollidedNode.ProbeCount += 1;
             int _CollisionAddress = CollidedNode.InitialAddress + CollidedNode.ProbeCount;
+            CollidedNode.ProbeCount += 1;
 
             // Wrap around to front of table if needed
             if (!(_CollisionAddress < _HashTable.Length)) { _CollisionAddress -= _HashTable.Length; }
@@ -70,7 +70,7 @@ namespace HashingLab.src
             MyHashNode NewNode = new MyHashNode(key);
             NewNode.ProbeCount++;
 
-            if (_HashTable[NewNode.InitialAddress].HashKey == null)
+            if (_HashTable[NewNode.InitialAddress].HashKey == null || _HashTable[NewNode.InitialAddress].HashKey == NewNode.HashKey)
             {
                 NewNode.CurrentLocation = NewNode.InitialAddress;
                 _HashTable[NewNode.CurrentLocation] = NewNode;
@@ -151,12 +151,16 @@ namespace HashingLab.src
             }
         }
 
-        // TODO Write method ShowContents
+        // TODO Write method ToString
         // TODO Document method
-        public string DisplayContents(int first, int last)
+        public override string ToString()
         {
-            // TODO Add method body
-            return "";
+            String contents = "";
+            foreach(MyHashNode node in _HashTable)
+            {
+                contents += $"{node.ToString()}\n";
+            }
+            return contents;
         }
         #endregion Methods
     }
@@ -171,8 +175,8 @@ namespace HashingLab.src
             int first = Convert.ToInt32(string.Format("{0}{1}", (int)_KeyChars[0], (int)_KeyChars[1]));
             int second = Convert.ToInt32(string.Format("{0}{1}", (int)_KeyChars[5], (int)_KeyChars[6]));
             // TODO Add body of algorithm
-            //_address = (((first + second) * 256) + (int)_KeyChars[12]) % 128;
-            _address = (((first + second) * 256) + (int)_KeyChars[12]) % 127;
+            _address = (((first + second) * 256) + (int)_KeyChars[12]) % 128;
+            //_address = (((first + second) * 257) + ((int)_KeyChars[0]) - (int)_KeyChars[1]) % 127;
 
             return _address;
 
