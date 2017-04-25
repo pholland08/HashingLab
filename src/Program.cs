@@ -25,8 +25,8 @@ namespace HashingLab
 
             // While less than 40% full, add entries to table
             int CurrentLine = 0;
-            //while (table.CurrentCapacity < (table.Length * .4d)) { table.Add(lines[CurrentLine++]); }
-            while (table.CurrentCapacity < (table.Length * .99d)) { table.Add(lines[CurrentLine++]); }
+            while (table.CurrentCapacity < (table.Length * .4d)) { table.Add(lines[CurrentLine++]); }
+            //while (table.CurrentCapacity < (table.Length * .99d)) { table.Add(lines[CurrentLine++]); }
 
             // TODO Get min, max, and avg #probes for the first 30 words
             CurrentLine = 0;
